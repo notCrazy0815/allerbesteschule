@@ -6,34 +6,6 @@ function checkIfContentIsLoaded() {
 
 checkIfContentIsLoaded();
 
-// let analysisShown = false;
-
-// function showAppContent() {
-//     const appWrapperPosition = "body > div > div > div > div > main > div";
-
-//     const appWrapper = document.querySelector(appWrapperPosition);
-//     if (appWrapper) {
-//         appWrapper.appendChild(createWrapper());
-//         const wrapper = document.querySelector(appWrapperPosition + " > div");
-
-//         wrapper.appendChild(createContent());
-//         const content = document.querySelector(appWrapperPosition + " > div > div");
-        
-//         content.appendChild(createHeading());
-//         content.appendChild(createButton());
-
-//         const button = document.querySelector(appWrapperPosition + " > div > div > button");
-//         if (button) {
-//             button.addEventListener("click", () => {
-//                 if (!analysisShown) {
-//                     readData();
-//                     analysisShown = true;
-//                 }
-//             });
-//         }
-//     }
-// }
-
 function readData() {
     const wrapper = document.querySelectorAll(".card-body > div > *");   
     const subjects = [];
@@ -78,16 +50,25 @@ function injectAnalysis(subjects) {
     for (let i = 0; i < wrapper.length; i++) {
         if (subjects[i].grades.length > 0) {
             const content = createAnalysisContent();
-            const average = createAverageElement(subjects[i].average);
-            content.appendChild(average);
+            content.appendChild(createAverageElement(subjects[i].average));
+            content.appendChild(createViewMoreButton());
             wrapper[i].appendChild(content);
         }
     }
+
+    const inTotalWrapper = document.querySelector(".card-body");
+    const inTotalContent = createAnalysisContent();
+
+    inTotalContent.appendChild(createHeading("Gesamt"));
+    inTotalContent.appendChild(createAverageElement(calculateAverage(subjects)));
+    inTotalWrapper.insertBefore(inTotalContent, inTotalWrapper.children[1]);
+
+    console.log(calculateAverage(subjects));
 }
 
 const createAnalysisContent = () => {
     const content = document.createElement("div");
-    content.style = "display: flex; width: 100% !important; flex-direction: column; gap: 20px;";
+    content.style = "display: flex; width: 100% !important; margin-bottom: 1rem; justify-content: space-between; align-items: center;";
     return content;
 }
 
@@ -97,28 +78,23 @@ const createAverageElement = (average) => {
     return elem;
 }
 
-const createWrapper = () => {
-    const wrapper = document.createElement("div");
-    wrapper.style = "display: flex; width: 100% !important; flex-direction: column; justify-content: center; align-items: center;"
-    return wrapper;
+const createViewMoreButton = () => {
+    const btn = document.createElement("button");
+    btn.innerHTML = "Mehr anzeigen >";
+    btn.style = "width: min-content; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; background-color: #ddd; color: black; cursor: pointer; white-space: nowrap;"
+    return btn;
 }
 
-const createContent = () => {
-    const content = document.createElement("div");
-    content.style = "display: flex; width: 100% !important; flex-direction: column; justify-content: center; align-items: center; gap: 20px;";
-    return content;
-}
-
-const createHeading = () => {
+const createHeading = (text) => {
     const h = document.createElement("h2");
-    h.innerText = "Allerbeste Schule is active";
-    h.style = "color: #fff; background-color: red; padding: 10px 20px; border-radius: 5px; font-weight: normal; font-size: 1.5rem; margin-top: 20px; text-align: center;"
+    h.innerText = text;
     return h;
 }
 
-const createButton = () => {
-    const button = document.createElement("button");
-    button.innerText = "Show analysis";
-    button.style = "background-color: #007bff; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;"
-    return button;
+const calculateAverage = (subjects) => {
+    let sum = 0;
+    for (subject of subjects) {
+        if (subject.average > 0) sum += subject.average;
+    }
+    return +(Math.round(sum / subjects.length + "e+2")  + "e-2");
 }
