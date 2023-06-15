@@ -1,106 +1,59 @@
-const appWrapperPosition = "body > #app > div > div > div";
-
-const appWrapper = document.querySelector(appWrapperPosition);
-if (appWrapper) {
-    appWrapper.appendChild(createWrapper());
-    const wrapper = document.querySelector(appWrapperPosition + " > div");
-
-    wrapper.appendChild(createContent());
-    const content = document.querySelector(appWrapperPosition + " > div > div");
-    
-    content.appendChild(createHeading());
-    content.appendChild(createButton());
-
-    const button = document.querySelector(appWrapperPosition + " > div > div > button");
-    if (button) {
-        button.addEventListener("click", () => {
-            readData();
-        });
-    }
+function checkIfContentIsLoaded() {
+    const content = document.querySelector(".card-body");
+    if (content) readData();
+    else setTimeout(checkIfContentIsLoaded, 100);
 }
 
-function createWrapper() {
-    const wrapper = document.createElement("div");
-    wrapper.style.display = "flex";
-    wrapper.style.width = "100%";
-    wrapper.style.flexDirection = "column";
-    wrapper.style.justifyContent = "center";
-    wrapper.style.alignItems = "center";
-    return wrapper;
-}
+checkIfContentIsLoaded();
 
-function createContent() {
-    const content = document.createElement("div");
-    content.style.display = "flex";
-    content.style.width = "50%";
-    content.style.flexDirection = "column";
-    content.style.justifyContent = "center";
-    content.style.alignItems = "center";
-    content.style.gap = "20px";
-    return content;
-}
+// let analysisShown = false;
 
-function createHeading() {
-    const h = document.createElement("h2");
-    h.innerText = "BetterSchule is active";
-    h.style.color = "#fff";
-    h.style.backgroundColor = "red";
-    h.style.padding = "10px 20px";
-    h.style.borderRadius = "5px";
-    h.style.fontWeight = "normal";
-    h.style.fontSize = "1.5rem";
-    h.style.marginTop = "20px";
-    h.style.textAlign = "center";
-    return h;
-}
+// function showAppContent() {
+//     const appWrapperPosition = "body > div > div > div > div > main > div";
 
-function createButton() {
-    const button = document.createElement("button");
-    button.innerText = "Show analysis";
-    button.style.backgroundColor = "#007bff";
-    button.style.color = "#fff";
-    button.style.border = "none";
-    button.style.padding = "10px 20px";
-    button.style.borderRadius = "5px";
-    button.style.cursor = "pointer";
-    return button;
-}
+//     const appWrapper = document.querySelector(appWrapperPosition);
+//     if (appWrapper) {
+//         appWrapper.appendChild(createWrapper());
+//         const wrapper = document.querySelector(appWrapperPosition + " > div");
+
+//         wrapper.appendChild(createContent());
+//         const content = document.querySelector(appWrapperPosition + " > div > div");
+        
+//         content.appendChild(createHeading());
+//         content.appendChild(createButton());
+
+//         const button = document.querySelector(appWrapperPosition + " > div > div > button");
+//         if (button) {
+//             button.addEventListener("click", () => {
+//                 if (!analysisShown) {
+//                     readData();
+//                     analysisShown = true;
+//                 }
+//             });
+//         }
+//     }
+// }
 
 function readData() {
-    const wrapper = document.querySelectorAll("body > #app > div > div > div > main > div > .card > .card-body > div > *");   
+    const wrapper = document.querySelectorAll(".card-body > div > *");   
     const subjects = [];
 
     for (let i = 0; i < wrapper.length; i++) {
         const childs = wrapper[i].children;
-
         if (wrapper[i].tagName === "H2") {
-            for (let j = 0; j < childs.length; j++) {
-                if (childs[j].tagName === "SPAN") {
-                    subjects.push({
-                        name: childs[j].innerText,
-                        grades: [],
-                        average: null
-                    });
+            for (child of childs) {
+                if (child.tagName === "SPAN") {
+                    subjects.push({ name: child.innerText, grades: [], average: 0 });
                 }
             }
         } else if (wrapper[i].tagName === "TABLE") {
-            for (let j = 0; j < childs.length; j++) {
-                if (childs[j].tagName === "TBODY") {
-                    const tr = childs[j].children;
-                    const td = tr[0].children;
-
-                    for (let k = 0; k < td.length; k++) {
-                        if (td[k].innerText.trim() != "") {
-                            const grades = td[k].innerText.trim().split("\n");
-
-                            grades.forEach(grade => {
-                                grade = grade.split("");
-                                let gradeNum;
-                                gradeNum = parseInt(grade[0]);
-
-                                if (gradeNum && gradeNum > 0) {
-                                    subjects[subjects.length - 1].grades.push(gradeNum);
-                                }
+            for (child of childs) {
+                if (child.tagName === "TBODY") {
+                    for (td of child.children[0].children) {
+                        if (td.innerText.trim() != "") {
+                            td.innerText.trim().split("\n").forEach(grade => {
+                                const gradeNum = parseInt(grade.split("")[0]);
+                                if (gradeNum && gradeNum > 0) subjects[subjects.length - 1].grades.push(gradeNum);
                             });
                         }
                     }
@@ -112,12 +65,60 @@ function readData() {
     for (subject of subjects) {
         if (subject.grades.length > 0) {
             let sum = 0;
-            for (grade of subject.grades) {
-                sum += grade;
-            }
+            for (grade of subject.grades) sum += grade;
             subject.average = +(Math.round(sum / subject.grades.length + "e+2")  + "e-2");
         }
     }
 
-    console.log(subjects);
+    injectAnalysis(subjects);
+}
+
+function injectAnalysis(subjects) {
+    const wrapper = document.querySelectorAll(".card-body > div");
+    for (let i = 0; i < wrapper.length; i++) {
+        if (subjects[i].grades.length > 0) {
+            const content = createAnalysisContent();
+            const average = createAverageElement(subjects[i].average);
+            content.appendChild(average);
+            wrapper[i].appendChild(content);
+        }
+    }
+}
+
+const createAnalysisContent = () => {
+    const content = document.createElement("div");
+    content.style = "display: flex; width: 100% !important; flex-direction: column; gap: 20px;";
+    return content;
+}
+
+const createAverageElement = (average) => {
+    const elem = document.createElement("p");
+    elem.innerHTML = "<b>Durchschnitt:</b> " + average;
+    return elem;
+}
+
+const createWrapper = () => {
+    const wrapper = document.createElement("div");
+    wrapper.style = "display: flex; width: 100% !important; flex-direction: column; justify-content: center; align-items: center;"
+    return wrapper;
+}
+
+const createContent = () => {
+    const content = document.createElement("div");
+    content.style = "display: flex; width: 100% !important; flex-direction: column; justify-content: center; align-items: center; gap: 20px;";
+    return content;
+}
+
+const createHeading = () => {
+    const h = document.createElement("h2");
+    h.innerText = "BetterSchule is active";
+    h.style = "color: #fff; background-color: red; padding: 10px 20px; border-radius: 5px; font-weight: normal; font-size: 1.5rem; margin-top: 20px; text-align: center;"
+    return h;
+}
+
+const createButton = () => {
+    const button = document.createElement("button");
+    button.innerText = "Show analysis";
+    button.style = "background-color: #007bff; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;"
+    return button;
 }
