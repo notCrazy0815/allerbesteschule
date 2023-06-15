@@ -111,7 +111,7 @@ const createContent = () => {
 
 const createHeading = () => {
     const h = document.createElement("h2");
-    h.innerText = "BetterSchule is active";
+    h.innerText = "Allerbeste Schule is active";
     h.style = "color: #fff; background-color: red; padding: 10px 20px; border-radius: 5px; font-weight: normal; font-size: 1.5rem; margin-top: 20px; text-align: center;"
     return h;
 }

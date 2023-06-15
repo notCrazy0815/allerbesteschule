@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Better schule",
+  "name": "Allerbeste Schule",
   "version": "0.1",
   "description": "This extension provides better analysis tools for students that use beste.schule to help them with evaluating their grades.",
   "action": {
