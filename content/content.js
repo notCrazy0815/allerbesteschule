@@ -4,8 +4,6 @@ function checkIfContentIsLoaded() {
     else setTimeout(checkIfContentIsLoaded, 100);
 }
 
-checkIfContentIsLoaded();
-
 function readData() {
     const wrapper = document.querySelectorAll(".card-body > div > *");   
     const subjects = [];
@@ -62,8 +60,6 @@ function injectAnalysis(subjects) {
     inTotalContent.appendChild(createHeading("Gesamt"));
     inTotalContent.appendChild(createAverageElement(calculateAverage(subjects)));
     inTotalWrapper.insertBefore(inTotalContent, inTotalWrapper.children[1]);
-
-    console.log(calculateAverage(subjects));
 }
 
 const createAnalysisContent = () => {
@@ -75,6 +71,7 @@ const createAnalysisContent = () => {
 const createAverageElement = (average) => {
     const elem = document.createElement("p");
     elem.innerHTML = "<b>Durchschnitt:</b> " + average;
+    elem.style = "margin: 0; margin-left: 10px;";
     return elem;
 }
 
@@ -93,8 +90,15 @@ const createHeading = (text) => {
 
 const calculateAverage = (subjects) => {
     let sum = 0;
+    let count = 0;
     for (subject of subjects) {
-        if (subject.average > 0) sum += subject.average;
+        if (subject.average > 0) {
+            sum += subject.average;
+            count++;
+        }
     }
-    return +(Math.round(sum / subjects.length + "e+2")  + "e-2");
+    console.log(sum, count);
+    return +(Math.round(sum / count + "e+2")  + "e-2");
 }
+
+checkIfContentIsLoaded();
