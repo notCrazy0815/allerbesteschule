@@ -1,1 +1,1 @@
-const baseUrl = "https://beste.schule";
+const baseUrl = "https://beste.schule/students";
