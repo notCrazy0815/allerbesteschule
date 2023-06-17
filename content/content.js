@@ -29,7 +29,7 @@ function readData() {
             }
 
             for (let j = 0; j < categories.length; j++) {
-                subjects[subjects.length - 1].grades.push({ category: categories[j], grades: grades[j], weight: 0 });
+                subjects[subjects.length - 1].grades.push({ name: categories[j], grades: grades[j], weight: 0 });
             }
         }
     }
@@ -122,7 +122,7 @@ const calculateAverage = (categories) => {
 
 const calculateWeight = (grades, category) => {
     const classTestNames = ["klassenarbeit", "ka", "class test", "travail de classe"];
-    if (classTestNames.includes(category.category.toLowerCase())) return 1 / grades.length;
+    if (classTestNames.includes(category.name.toLowerCase())) return 1 / grades.length;
     return 0;
 }
 
