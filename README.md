@@ -7,6 +7,3 @@ The student is only shown the grades, without an average, without any interpreta
 ### How does the extension solve this problem?
 
 The extension offers the student extensive possibilities to analyze his grades. For example, with distribution graphs for individual subjects or even for all subjects. In addition, the user is directly shown the average in each subject as well as the overall average. It is also taken into account that, for example, class tests have a larger percentage share in the final grade than other tests. However, the user can also freely configure this weighting.
-
-### How does the extension work?
-When the content of the page is loaded, the extension reads the subjects and grades and then inserts the analysis content. This happens in content.js.

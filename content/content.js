@@ -1,43 +1,27 @@
-function checkIfContentIsLoaded() {
-    if (document.querySelector(".card-body")) readData();
+async function checkIfContentIsLoaded() {
+    if (document.querySelector(".card-body")) await readData();
     else setTimeout(checkIfContentIsLoaded, 100);
 }
 
-function readData() {
-    const dataContent = document.querySelectorAll(".card-body > div > *");
-    let subjects = [];
-
-    for (let i = 0; i < dataContent.length; i++) {
-        let currentSubjectName = "";
-        if (dataContent[i].tagName === "H2") {
-            currentSubjectName = dataContent[i].children[0].innerText;
-            subjects.push({ name: currentSubjectName, grades: [], average: 0 });
-        } else if (dataContent[i].tagName === "TABLE") {
-            const categories = [];
-            const grades = [];
-            for (let j = 0; j < dataContent[i].children[0].children[0].children.length; j++) {
-                const category = dataContent[i].children[0].children[0].children[j].innerText;
-                if (category.trim() !== "") {
-                    categories.push(category);
-                    const tempGrades = [];
-                    for (let k = 0; k < dataContent[i].children[1].children[0].children[j].children[0].children.length; k++) {
-                        const grade = formatGrade(dataContent[i].children[1].children[0].children[j].children[0].children[k].innerText);
-                        if (grade) tempGrades.push(grade);
-                    }
-                    grades.push(tempGrades);
-                }
-            }
-
-            for (let j = 0; j < categories.length; j++) {
-                subjects[subjects.length - 1].grades.push({ name: categories[j], grades: grades[j], weight: 0 });
-            }
+async function readData() {
+    const res = await fetch(`https://beste.schule/web/students/${location.href.split("/")[4]}?include=grades,subjects`);
+    const data = await res.json();
+    let subjects = data.data.subjects.map(subject => {
+        return { name: subject.name, grades: [], average: 0 };
+    });
+    const grades = data.data.grades.filter(grade => formatGrade(grade.value)).map(grade => {
+        return { value: formatGrade(grade.value), date: Date.parse(grade.given_at), name: grade.collection.name, category: grade.collection.type, subject: grade.collection.subject.name };
+    });
+    grades.forEach(grade => {
+        const subject = subjects.find(subject => subject.name === grade.subject);
+        if (subject) {
+            const category = subject.grades.find(category => category.name === grade.category);
+            if (category) category.grades.push(grade);
+            else subject.grades.push({ name: grade.category, grades: [grade], weight: 0 });
         }
-    }
-
+    });
+    
     subjects = calculateAverages(subjects);
-
-    console.log(subjects);
-
     injectAnalysis(subjects);
 }
 
@@ -116,12 +100,12 @@ const calculateAverages = (subjects) => {
         subject.grades.forEach(category => {
             if (classTestNames.includes(category.name.toLowerCase())) {
                 const categoryWeight = 0.5;
-                const categoryAveage = category.grades.reduce((a, b) => a + b, 0) / category.grades.length;
+                const categoryAverage = category.grades.reduce((a, b) => a + b.value, 0) / category.grades.length;
 
                 totalWeight += categoryWeight;
-                weightedSum += categoryAveage * categoryWeight;
+                weightedSum += categoryAverage * categoryWeight;
             } else {
-                combinedGrades = combinedGrades.concat(category.grades);
+                combinedGrades = combinedGrades.concat(category.grades.map(grade => grade.value));
             }
         });
 
