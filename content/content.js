@@ -3,6 +3,8 @@ async function checkIfContentIsLoaded() {
     else setTimeout(checkIfContentIsLoaded, 100);
 }
 
+checkIfContentIsLoaded();
+
 async function readData() {
     const wrapper = document.querySelector(".card-body");
     wrapper.innerHTML = "";
@@ -39,6 +41,62 @@ function injectAnalysis(subjects) {
 
 function showAnalysis(subject) {
     console.log(subject);
+}
+
+const calculateTotalAverage = (subjects) => {
+    let sum = 0;
+    let count = 0;
+    for (subject of subjects) {
+        if (subject.average > 0) {
+            sum += subject.average;
+            count++;
+        }
+    }
+    return +(Math.round(sum / count + "e+2")  + "e-2");
+}
+
+const calculateAverages = (subjects) => {
+    subjects.forEach(subject => {
+        let totalWeight = 0;
+        let weightedSum = 0;
+        let combinedGrades = [];
+        const classTestNames = ["klassenarbeit", "ka", "class test", "travail de classe"];
+
+        subject.grades.forEach(category => {
+            if (classTestNames.includes(category.name.toLowerCase())) {
+                const categoryWeight = 0.5;
+                const categoryAverage = category.grades.reduce((a, b) => a + b.value, 0) / category.grades.length;
+
+                totalWeight += categoryWeight;
+                weightedSum += categoryAverage * categoryWeight;
+            } else {
+                combinedGrades = combinedGrades.concat(category.grades.map(grade => grade.value));
+            }
+        });
+
+        if (combinedGrades.length > 0) {
+            const combinedWeight = 1 - totalWeight;
+            const combinedAverage = combinedGrades.reduce((a, b) => a + b, 0) / combinedGrades.length;
+        
+            totalWeight += combinedWeight;
+            weightedSum += combinedAverage * combinedWeight;
+        }
+
+        subject.average = +(Math.round(weightedSum / totalWeight + "e+2")  + "e-2");
+    });
+
+    return subjects;
+}
+
+const calculateAverage = (category) => {
+    const sum = category.reduce((a, b) => a + b.value, 0);
+    return +(Math.round(sum / category.length + "e+2")  + "e-2");
+}
+
+const formatGrade = (grade) => {
+    const g = grade.trim().split("");
+    if (parseInt(g[0])) return parseInt(g[0]);
+    return null;
 }
 
 const createAnalysisContent = () => {
@@ -140,17 +198,10 @@ const createTableRow = (category) => {
     gradeCell.style.gap = "0.7rem";
     gradeCell.style.flexWrap = "wrap";
     category.grades.forEach(grade => {
-        gradeCell.appendChild(createGradeElem(grade.valueText));
+        gradeCell.appendChild(createGradeElem(grade));
     });
     tr.appendChild(gradeCell);
     return tr;
-}
-
-const createGradeElem = (text) => {
-    const elem = document.createElement("p");
-    elem.innerText = text;
-    elem.style = "margin: 0; font-weight: bold;";
-    return elem;
 }
 
 const createTableCell = (text) => {
@@ -160,60 +211,37 @@ const createTableCell = (text) => {
     return td;
 }
 
-const calculateTotalAverage = (subjects) => {
-    let sum = 0;
-    let count = 0;
-    for (subject of subjects) {
-        if (subject.average > 0) {
-            sum += subject.average;
-            count++;
-        }
-    }
-    return +(Math.round(sum / count + "e+2")  + "e-2");
-}
+const createGradeElem = (grade) => {
+    const elem = document.createElement("div");
+    const p = document.createElement("p");
+    p.innerText = grade.valueText;
+    elem.style = "display: flex; align-items: center; justify-content: center;";
+    p.style = "margin: 0; font-weight: bold;";
+    const toolTip = createGradeToolTip(grade);
 
-const calculateAverages = (subjects) => {
-    subjects.forEach(subject => {
-        let totalWeight = 0;
-        let weightedSum = 0;
-        let combinedGrades = [];
-        const classTestNames = ["klassenarbeit", "ka", "class test", "travail de classe"];
+    elem.appendChild(p);
+    elem.appendChild(toolTip);
 
-        subject.grades.forEach(category => {
-            if (classTestNames.includes(category.name.toLowerCase())) {
-                const categoryWeight = 0.5;
-                const categoryAverage = category.grades.reduce((a, b) => a + b.value, 0) / category.grades.length;
-
-                totalWeight += categoryWeight;
-                weightedSum += categoryAverage * categoryWeight;
-            } else {
-                combinedGrades = combinedGrades.concat(category.grades.map(grade => grade.value));
-            }
-        });
-
-        if (combinedGrades.length > 0) {
-            const combinedWeight = 1 - totalWeight;
-            const combinedAverage = combinedGrades.reduce((a, b) => a + b, 0) / combinedGrades.length;
-        
-            totalWeight += combinedWeight;
-            weightedSum += combinedAverage * combinedWeight;
-        }
-
-        subject.average = +(Math.round(weightedSum / totalWeight + "e+2")  + "e-2");
+    elem.addEventListener("mouseover", () => {
+        toolTip.style.display = "block";
     });
 
-    return subjects;
+    elem.addEventListener("mouseleave", () => {
+        toolTip.style.display = "none";
+    });
+    return elem;
 }
 
-const calculateAverage = (category) => {
-    const sum = category.reduce((a, b) => a + b.value, 0);
-    return +(Math.round(sum / category.length + "e+2")  + "e-2");
+const createGradeToolTip = (grade) => {
+    const toolTip = document.createElement("div");
+    toolTip.style = "display: none; width: auto; height: auto; background-color: #bbb; padding: 0.5rem; border-radius: 0.5rem; z-index: 1; white-space: nowrap; font-size: 0.8rem; position: absolute; margin-top: -5rem;";
+    const name = document.createElement("p");
+    name.style = "margin: 0; font-weight: bold;";
+    name.innerText = grade.name;
+    const date = document.createElement("p");
+    date.style = "margin: 0;";
+    date.innerText = new Date(grade.date).toLocaleDateString("de-DE");
+    toolTip.appendChild(name);
+    toolTip.appendChild(date);
+    return toolTip;
 }
-
-const formatGrade = (grade) => {
-    const g = grade.trim().split("");
-    if (parseInt(g[0])) return parseInt(g[0]);
-    return null;
-}
-
-checkIfContentIsLoaded();
