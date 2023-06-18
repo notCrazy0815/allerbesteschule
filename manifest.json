@@ -9,7 +9,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://beste.schule/students/*/grades"
+        "https://beste.schule/students/*/grades*"
       ],
       "js": ["content/content.js"]
     }

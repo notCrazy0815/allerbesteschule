@@ -4,20 +4,22 @@ async function checkIfContentIsLoaded() {
 }
 
 async function readData() {
+    const wrapper = document.querySelector(".card-body");
+    wrapper.innerHTML = "";
     const res = await fetch(`https://beste.schule/web/students/${location.href.split("/")[4]}?include=grades,subjects`);
     const data = await res.json();
     let subjects = data.data.subjects.map(subject => {
         return { name: subject.name, grades: [], average: 0 };
     });
     const grades = data.data.grades.filter(grade => formatGrade(grade.value)).map(grade => {
-        return { value: formatGrade(grade.value), date: Date.parse(grade.given_at), name: grade.collection.name, category: grade.collection.type, subject: grade.collection.subject.name };
+        return { value: formatGrade(grade.value), valueText: grade.value, date: Date.parse(grade.given_at), name: grade.collection.name, category: grade.collection.type, subject: grade.collection.subject.name };
     });
     grades.forEach(grade => {
         const subject = subjects.find(subject => subject.name === grade.subject);
         if (subject) {
             const category = subject.grades.find(category => category.name === grade.category);
             if (category) category.grades.push(grade);
-            else subject.grades.push({ name: grade.category, grades: [grade], weight: 0 });
+            else subject.grades.push({ name: grade.category, grades: [grade] });
         }
     });
     
@@ -26,22 +28,13 @@ async function readData() {
 }
 
 function injectAnalysis(subjects) {
-    const wrapper = document.querySelectorAll(".card-body > div");
-    for (let i = 0; i < wrapper.length; i++) {
-        if (subjects[i].grades.length > 0) {
-            const content = createAnalysisContent();
-            content.appendChild(createAverageElement(subjects[i].average));
-            content.appendChild(createViewMoreButton(subjects[i]));
-            wrapper[i].appendChild(content);
-        }
-    }
-
-    const inTotalWrapper = document.querySelector(".card-body");
-    const inTotalContent = createAnalysisContent();
-
-    inTotalContent.appendChild(createHeading("Gesamt"));
-    inTotalContent.appendChild(createAverageElement(calculateTotalAverage(subjects)));
-    inTotalWrapper.insertBefore(inTotalContent, inTotalWrapper.children[1]);
+    const wrapper = document.querySelector(".card-body");
+    const content = createAnalysisContent();
+    subjects.forEach(subject => {
+        if (subject.average > 0) content.appendChild(createSubjectElement(subject));
+        else content.appendChild(createNoGradeElement(subject));
+    });
+    wrapper.appendChild(content);
 }
 
 function showAnalysis(subject) {
@@ -50,14 +43,35 @@ function showAnalysis(subject) {
 
 const createAnalysisContent = () => {
     const content = document.createElement("div");
-    content.style = "display: flex; width: 100% !important; margin-bottom: 1rem; justify-content: space-between; align-items: center;";
+    content.style = "display: flex; flex-direction: column; width: 100% !important; margin-bottom: 1rem; gap: 2rem;";
     return content;
+}
+
+const createSubjectElement = (subject) => {
+    const elem = document.createElement("div");
+    elem.style = "display: flex; width: 100%; flex-direction: column; gap: 0.5rem;";
+    elem.appendChild(createHeading(subject.name));
+    elem.appendChild(createGradeTable(subject));
+    return elem;
+}
+
+const createNoGradeElement = (subject) => {
+    const elem = document.createElement("div");
+    elem.style = "display: flex; width: 100%; flex-direction: column; gap: 0.5rem;";
+    elem.appendChild(createHeading(subject.name));
+    elem.appendChild(createNoGradeText());
+    return elem;
+}
+
+const createNoGradeText = () => {
+    const elem = document.createElement("p");
+    elem.innerHTML = "Keine Noten vorhanden.";
+    return elem;
 }
 
 const createAverageElement = (average) => {
     const elem = document.createElement("p");
     elem.innerHTML = "<b>Durchschnitt:</b> " + average;
-    elem.style = "margin: 0; margin-left: 10px;";
     return elem;
 }
 
@@ -76,6 +90,74 @@ const createHeading = (text) => {
     const h = document.createElement("h2");
     h.innerText = text;
     return h;
+}
+
+const createGradeTable = (subject) => {
+    const t = document.createElement("table");
+    t.style = "width: 100%; border-collapse: collapse; border: 1px solid #ddd; border-radius: 0.5rem; overflow: hidden;";
+    t.appendChild(createTableHeader());
+    subject.grades.forEach(category => {
+        t.appendChild(createTableRow(category));
+    });
+    t.appendChild(createInTotalRow(subject));
+    return t;
+}
+
+const createInTotalRow = (subject) => {
+    const tr = document.createElement("tr");
+    tr.style = "border-bottom: 1px solid #ddd; font-weight: bold";
+    tr.appendChild(createTableCell("Insgesamt"));
+    tr.appendChild(createTableCell(subject.average));
+    const lastCell = createTableCell("");
+    lastCell.appendChild(createViewMoreButton(subject));
+    tr.appendChild(lastCell);
+    return tr;
+}
+
+const createTableHeader = () => {
+    const tr = document.createElement("tr");
+    tr.style = "border-bottom: 1px solid #ddd; background-color: #ddd;";
+    tr.appendChild(createTableHeaderCell("Kategorie"));
+    tr.appendChild(createTableHeaderCell("Durchschnitt"));
+    tr.appendChild(createTableHeaderCell("Noten"));
+    return tr;
+}
+
+const createTableHeaderCell = (text) => {
+    const th = document.createElement("th");
+    th.style = "padding: 0.5rem 1rem;";
+    th.innerText = text;
+    return th;
+}
+
+const createTableRow = (category) => {
+    const tr = document.createElement("tr");
+    tr.style = "border-bottom: 1px solid #ddd;";
+    tr.appendChild(createTableCell(category.name));
+    tr.appendChild(createTableCell(calculateAverage(category.grades)));
+    const gradeCell = createTableCell("");
+    gradeCell.style.display = "flex";
+    gradeCell.style.gap = "0.7rem";
+    gradeCell.style.flexWrap = "wrap";
+    category.grades.forEach(grade => {
+        gradeCell.appendChild(createGradeElem(grade.valueText));
+    });
+    tr.appendChild(gradeCell);
+    return tr;
+}
+
+const createGradeElem = (text) => {
+    const elem = document.createElement("p");
+    elem.innerText = text;
+    elem.style = "margin: 0; font-weight: bold;";
+    return elem;
+}
+
+const createTableCell = (text) => {
+    const td = document.createElement("td");
+    td.style = "padding: 0.5rem 1rem;";
+    td.innerText = text;
+    return td;
 }
 
 const calculateTotalAverage = (subjects) => {
@@ -121,6 +203,11 @@ const calculateAverages = (subjects) => {
     });
 
     return subjects;
+}
+
+const calculateAverage = (category) => {
+    const sum = category.reduce((a, b) => a + b.value, 0);
+    return +(Math.round(sum / category.length + "e+2")  + "e-2");
 }
 
 const formatGrade = (grade) => {
