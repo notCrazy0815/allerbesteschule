@@ -5,13 +5,13 @@ function checkIfContentIsLoaded() {
 
 function readData() {
     const dataContent = document.querySelectorAll(".card-body > div > *");
-    const subjects = [];
+    let subjects = [];
 
     for (let i = 0; i < dataContent.length; i++) {
         let currentSubjectName = "";
         if (dataContent[i].tagName === "H2") {
             currentSubjectName = dataContent[i].children[0].innerText;
-            subjects.push({ name: currentSubjectName, grades: [], average: 0, weight: 0 });
+            subjects.push({ name: currentSubjectName, grades: [], average: 0 });
         } else if (dataContent[i].tagName === "TABLE") {
             const categories = [];
             const grades = [];
@@ -34,10 +34,9 @@ function readData() {
         }
     }
 
-    subjects.forEach(subject => {
-        subject.grades.forEach(category => category.weight = calculateWeight(subject.grades, category) );
-        subject.average = calculateAverage(subject.grades);
-    });
+    subjects = calculateAverages(subjects);
+
+    console.log(subjects);
 
     injectAnalysis(subjects);
 }
@@ -107,23 +106,37 @@ const calculateTotalAverage = (subjects) => {
     return +(Math.round(sum / count + "e+2")  + "e-2");
 }
 
-const calculateAverage = (categories) => {
-    const zeroWeightGrades = categories.filter(category => category.weight === 0).map(category => category.grades).flat();
-    const zeroWeightAverage = zeroWeightGrades.reduce((a, b) => a + b, 0) / zeroWeightGrades.length;
-    const weightedGrades = categories.filter(category => category.weight > 0).flat();
-    const zeroWeightGradesWeight = 1 / (1 + weightedGrades.length);
-    let sum = 0;
-    for (category of weightedGrades) {
-        sum += category.grades.reduce((a, b) => a + b, 0) * category.weight / category.grades.length;
-    }
-    sum += zeroWeightAverage * zeroWeightGradesWeight;
-    return +(Math.round(sum + "e+2")  + "e-2");
-}
+const calculateAverages = (subjects) => {
+    subjects.forEach(subject => {
+        let totalWeight = 0;
+        let weightedSum = 0;
+        let combinedGrades = [];
+        const classTestNames = ["klassenarbeit", "ka", "class test", "travail de classe"];
 
-const calculateWeight = (grades, category) => {
-    const classTestNames = ["klassenarbeit", "ka", "class test", "travail de classe"];
-    if (classTestNames.includes(category.name.toLowerCase())) return 1 / grades.length;
-    return 0;
+        subject.grades.forEach(category => {
+            if (classTestNames.includes(category.name.toLowerCase())) {
+                const categoryWeight = 0.5;
+                const categoryAveage = category.grades.reduce((a, b) => a + b, 0) / category.grades.length;
+
+                totalWeight += categoryWeight;
+                weightedSum += categoryAveage * categoryWeight;
+            } else {
+                combinedGrades = combinedGrades.concat(category.grades);
+            }
+        });
+
+        if (combinedGrades.length > 0) {
+            const combinedWeight = 1 - totalWeight;
+            const combinedAverage = combinedGrades.reduce((a, b) => a + b, 0) / combinedGrades.length;
+        
+            totalWeight += combinedWeight;
+            weightedSum += combinedAverage * combinedWeight;
+        }
+
+        subject.average = +(Math.round(weightedSum / totalWeight + "e+2")  + "e-2");
+    });
+
+    return subjects;
 }
 
 const formatGrade = (grade) => {
