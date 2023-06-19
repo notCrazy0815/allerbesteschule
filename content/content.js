@@ -158,24 +158,13 @@ const createHeading = (text) => {
 
 const createGradeTable = (subject) => {
     const t = document.createElement("table");
-    t.style = "width: 100%; border-collapse: collapse; border: 1px solid #ddd; border-radius: 0.5rem; overflow: hidden;";
+    t.style = "width: 100%; border-collapse: collapse; border: 1px solid #ddd; border-radius: 0.5rem; overflow: hidden; table-layout: fixed;";
     t.appendChild(createTableHeader());
     subject.grades.forEach(category => {
         t.appendChild(createTableRow(category));
     });
     t.appendChild(createInTotalRow(subject));
     return t;
-}
-
-const createInTotalRow = (subject) => {
-    const tr = document.createElement("tr");
-    tr.style = "border-bottom: 1px solid #ddd; font-weight: bold";
-    tr.appendChild(createTableCell("Insgesamt"));
-    tr.appendChild(createTableCell(subject.average));
-    const lastCell = createTableCell("");
-    lastCell.appendChild(createViewMoreButton(subject));
-    tr.appendChild(lastCell);
-    return tr;
 }
 
 const createTableHeader = () => {
@@ -189,7 +178,7 @@ const createTableHeader = () => {
 
 const createTableHeaderCell = (text) => {
     const th = document.createElement("th");
-    th.style = "padding: 0.5rem 1rem;";
+    th.style = "padding: 0.5rem 1rem; width: calc(100% / 3)";
     th.innerText = text;
     return th;
 }
@@ -215,6 +204,18 @@ const createTableCell = (text) => {
     td.style = "padding: 0.5rem 1rem;";
     td.innerText = text;
     return td;
+}
+
+
+const createInTotalRow = (subject) => {
+    const tr = document.createElement("tr");
+    tr.style = "border-bottom: 1px solid #ddd; font-weight: bold";
+    tr.appendChild(createTableCell("Insgesamt"));
+    tr.appendChild(createTableCell(subject.average));
+    const lastCell = createTableCell("");
+    lastCell.appendChild(createViewMoreButton(subject));
+    tr.appendChild(lastCell);
+    return tr;
 }
 
 const createGradeElem = (grade) => {
