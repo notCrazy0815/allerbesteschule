@@ -24,7 +24,7 @@ async function readData() {
             if (category) category.grades.push(grade);
             else subject.grades.push({ name: grade.category, grades: [grade] });
         }
-    });
+    }); 
 }
 
 function loadData() {
@@ -37,6 +37,7 @@ function loadData() {
 function injectAnalysis(subjects) {
     const wrapper = document.querySelector(".card-body");
     const content = createAnalysisContent();
+    content.appendChild(createInTotalElement(calculateTotalAverage(subjects)));
     subjects.forEach(subject => {
         if (subject.average > 0) content.appendChild(createSubjectElement(subject));
         else content.appendChild(createNoGradeElement(subject));
@@ -249,4 +250,12 @@ const createGradeToolTip = (grade) => {
     toolTip.appendChild(name);
     toolTip.appendChild(date);
     return toolTip;
+}
+
+const createInTotalElement = (average) => {
+    const elem = document.createElement("div");
+    elem.style = "display: flex; width: 100%; justify-content: space-between; align-items: center; margin-bottom: -1rem;";
+    elem.appendChild(createHeading("Insgesamt"));
+    elem.appendChild(createAverageElement(average));
+    return elem;
 }
