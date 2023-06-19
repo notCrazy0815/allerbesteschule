@@ -28,8 +28,8 @@ async function readData() {
 }
 
 function loadData() {
-    const wrapper = document.querySelector(".card-body");
-    wrapper.innerHTML = "";
+    document.querySelector(".card-body").innerHTML = "";
+    document.getElementById("btn-radios-view").remove();
     subjects = calculateAverages(subjects);
     injectAnalysis(subjects);
 }
@@ -239,7 +239,7 @@ const createGradeElem = (grade) => {
 
 const createGradeToolTip = (grade) => {
     const toolTip = document.createElement("div");
-    toolTip.style = "display: none; width: auto; height: auto; background-color: #bbb; padding: 0.5rem; border-radius: 0.5rem; z-index: 1; white-space: nowrap; font-size: 0.8rem; position: absolute; margin-top: -5rem;";
+    toolTip.style = "display: none; width: auto; height: auto; background-color: #ccc; padding: 0.5rem; border-radius: 0.5rem; z-index: 1; white-space: nowrap; position: absolute; margin-top: -6rem;";
     const name = document.createElement("p");
     name.style = "margin: 0; font-weight: bold;";
     name.innerText = grade.name;
