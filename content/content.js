@@ -1,16 +1,17 @@
+readData();
+checkIfContentIsLoaded();
+
+let subjects = [];
+
 async function checkIfContentIsLoaded() {
-    if (document.querySelector(".card-body")) await readData();
+    if (document.querySelector(".card-body") && subjects.length > 0) loadData();
     else setTimeout(checkIfContentIsLoaded, 100);
 }
 
-checkIfContentIsLoaded();
-
 async function readData() {
-    const wrapper = document.querySelector(".card-body");
-    wrapper.innerHTML = "";
     const res = await fetch(`https://beste.schule/web/students/${location.href.split("/")[4]}?include=grades,subjects`);
     const data = await res.json();
-    let subjects = data.data.subjects.map(subject => {
+    subjects = data.data.subjects.map(subject => {
         return { name: subject.name, grades: [], average: 0 };
     });
     const grades = data.data.grades.filter(grade => formatGrade(grade.value)).map(grade => {
@@ -24,7 +25,11 @@ async function readData() {
             else subject.grades.push({ name: grade.category, grades: [grade] });
         }
     });
-    
+}
+
+function loadData() {
+    const wrapper = document.querySelector(".card-body");
+    wrapper.innerHTML = "";
     subjects = calculateAverages(subjects);
     injectAnalysis(subjects);
 }
