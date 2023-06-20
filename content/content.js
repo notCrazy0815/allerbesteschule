@@ -2,6 +2,7 @@ readData();
 checkIfContentIsLoaded();
 
 let subjects = [];
+let newestGrades = [];
 
 async function checkIfContentIsLoaded() {
     if (document.querySelector(".card-body") && subjects.length > 0) loadData();
@@ -24,7 +25,8 @@ async function readData() {
             if (category) category.grades.push(grade);
             else subject.grades.push({ name: grade.category, grades: [grade] });
         }
-    }); 
+    });
+    newestGrades = grades.sort((a, b) => b.date - a.date).slice(0, 5);
 }
 
 function loadData() {
@@ -38,6 +40,7 @@ function injectAnalysis(subjects) {
     const wrapper = document.querySelector(".card-body");
     const content = createAnalysisContent();
     content.appendChild(createInTotalElement(calculateTotalAverage(subjects)));
+    content.appendChild(createNewestGradesElement(newestGrades));
     subjects.forEach(subject => {
         if (subject.average > 0) content.appendChild(createSubjectElement(subject));
         else content.appendChild(createNoGradeElement(subject));
@@ -159,7 +162,7 @@ const createHeading = (text) => {
 const createGradeTable = (subject) => {
     const t = document.createElement("table");
     t.style = "width: 100%; border-collapse: collapse; border: 1px solid #ddd; border-radius: 0.5rem; overflow: hidden; table-layout: fixed;";
-    t.appendChild(createTableHeader());
+    t.appendChild(createTableHeader(false));
     subject.grades.forEach(category => {
         t.appendChild(createTableRow(category));
     });
@@ -167,12 +170,15 @@ const createGradeTable = (subject) => {
     return t;
 }
 
-const createTableHeader = () => {
+const createTableHeader = (showSubject) => {
     const tr = document.createElement("tr");
     tr.style = "border-bottom: 1px solid #ddd; background-color: #ddd;";
-    tr.appendChild(createTableHeaderCell("Kategorie"));
-    tr.appendChild(createTableHeaderCell("Durchschnitt"));
-    tr.appendChild(createTableHeaderCell("Noten"));
+    if (showSubject) tr.appendChild(createTableHeaderCell("Fach"));
+    if (!showSubject) tr.appendChild(createTableHeaderCell("Kategorie"));
+    else tr.appendChild(createTableHeaderCell("Name"));
+    if (!showSubject) tr.appendChild(createTableHeaderCell("Durchschnitt"));
+    if (!showSubject) tr.appendChild(createTableHeaderCell("Noten"));
+    else tr.appendChild(createTableHeaderCell("Note"));
     return tr;
 }
 
@@ -258,5 +264,29 @@ const createInTotalElement = (average) => {
     elem.style = "display: flex; width: 100%; justify-content: space-between; align-items: center; margin-bottom: -1rem;";
     elem.appendChild(createHeading("Insgesamt"));
     elem.appendChild(createAverageElement(average));
+    return elem;
+}
+
+const createNewestGradesElement = (grades) => {
+    const elem =  document.createElement("div");
+    elem.style = "display: flex; width: 100%; flex-direction: column; gap: 0.5rem;";
+    elem.appendChild(createHeading("Neueste Noten"));
+    const table = document.createElement("table");
+    table.style = "width: 100%; border-collapse: collapse; border: 1px solid #ddd; border-radius: 0.5rem; overflow: hidden; table-layout: fixed;";
+    table.appendChild(createTableHeader(true));
+    grades.forEach(grade => {
+        const tr = document.createElement("tr");
+        tr.style = "border-bottom: 1px solid #ddd;";
+        tr.appendChild(createTableCell(grade.subject));
+        tr.appendChild(createTableCell(grade.name));
+        const gradeCell = createTableCell("");
+        gradeCell.style.display = "flex";
+        gradeCell.style.gap = "0.7rem";
+        gradeCell.style.flexWrap = "wrap";
+        gradeCell.appendChild(createGradeElem(grade));
+        tr.appendChild(gradeCell);
+        table.appendChild(tr);
+    });
+    elem.appendChild(table);
     return elem;
 }
