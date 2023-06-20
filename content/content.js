@@ -33,13 +33,14 @@ function loadData() {
     document.querySelector(".card-body").innerHTML = "";
     document.getElementById("btn-radios-view").remove();
     subjects = calculateAverages(subjects);
-    injectAnalysis(subjects);
+    injectContent(subjects);
 }
 
-function injectAnalysis(subjects) {
+function injectContent(subjects) {
     const wrapper = document.querySelector(".card-body");
-    const content = createAnalysisContent();
+    const content = createContent();
     content.appendChild(createInTotalElement(calculateTotalAverage(subjects)));
+    content.appendChild(createAnalysisContent(subjects))
     content.appendChild(createNewestGradesElement(newestGrades));
     subjects.forEach(subject => {
         if (subject.average > 0) content.appendChild(createSubjectElement(subject));
@@ -108,9 +109,32 @@ const formatGrade = (grade) => {
     return null;
 }
 
-const createAnalysisContent = () => {
+const calculateGradeDistribution = (subjects) => {
+    const distribution = [];
+    for (let i = 0; i < 15; i++) {
+        distribution.push({ value: i + 1, count: 0 });
+    }
+    subjects.forEach(subject => {
+        subject.grades.forEach(category => {
+            category.grades.forEach(grade => {
+                distribution[grade.value - 1].count++;
+            });
+        });
+    });
+    return distribution.filter(grade => grade.count > 0);
+}
+
+const createContent = () => {
     const content = document.createElement("div");
     content.style = "display: flex; flex-direction: column; width: 100% !important; margin-bottom: 1rem; gap: 2rem;";
+    return content;
+}
+
+const createAnalysisContent = (subjects) => {
+    const content = document.createElement("div");
+    content.style = "display: flex; width: 100%; flex-direction: column; gap: 0.5rem;";
+    content.appendChild(createHeading("Analyse"));
+    content.appendChild(createGradeDistributionChartCanvas(subjects));
     return content;
 }
 
@@ -142,9 +166,9 @@ const createAverageElement = (average) => {
     return elem;
 }
 
-const createViewMoreButton = (subject) => {
+const createViewAnalysisButton = (subject) => {
     const btn = document.createElement("button");
-    btn.innerHTML = "Mehr anzeigen >";
+    btn.innerHTML = "Anzeigen";
     btn.style = "width: min-content; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; background-color: #ddd; color: black; cursor: pointer; white-space: nowrap; transition: background-color 0.1s ease-in-out;"
     btn.setAttribute("id", subject.name);
     btn.addEventListener("click", () => showAnalysis(subject));
@@ -218,9 +242,7 @@ const createInTotalRow = (subject) => {
     tr.style = "border-bottom: 1px solid #ddd; font-weight: bold";
     tr.appendChild(createTableCell("Insgesamt"));
     tr.appendChild(createTableCell(subject.average));
-    const lastCell = createTableCell("");
-    lastCell.appendChild(createViewMoreButton(subject));
-    tr.appendChild(lastCell);
+    tr.appendChild(createTableCell(""));
     return tr;
 }
 
@@ -261,7 +283,7 @@ const createGradeToolTip = (grade) => {
 
 const createInTotalElement = (average) => {
     const elem = document.createElement("div");
-    elem.style = "display: flex; width: 100%; justify-content: space-between; align-items: center; margin-bottom: -1rem;";
+    elem.style = "display: flex; width: 100%; justify-content: space-between; align-items: center;";
     elem.appendChild(createHeading("Insgesamt"));
     elem.appendChild(createAverageElement(average));
     return elem;
@@ -289,4 +311,34 @@ const createNewestGradesElement = (grades) => {
     });
     elem.appendChild(table);
     return elem;
+}
+
+const createGradeDistributionChartCanvas = (grades) => {
+    const container = document.createElement("div");
+    const size = document.querySelector(".card-body").offsetWidth / 2 * 0.9;
+    container.style = `max-width: ${size}px; max-height: ${size}px;`;
+    const canvas = document.createElement("canvas");
+    container.appendChild(canvas);
+    canvas.setAttribute("id", "gradeDistributionChart");
+    const ctx = canvas.getContext("2d");
+    const gradeDistribution = calculateGradeDistribution(grades);
+    const chart = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: [].concat(...gradeDistribution.map(grade => grade.value)),
+            datasets: [{
+                label: "Anzahl",
+                data: gradeDistribution.map(grade => grade.count),
+                backgroundColor: "#3490dc"
+            }]
+        },
+        options: {
+            legend: {
+                display: false
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+        }
+    });
+    return container;
 }

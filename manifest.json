@@ -8,10 +8,8 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://beste.schule/students/*/grades*"
-      ],
-      "js": ["content/content.js"]
+      "matches": ["https://beste.schule/students/*/grades*"],
+      "js": ["content/content.js", "content/chart.js"]
     }
   ],
   "background": {
