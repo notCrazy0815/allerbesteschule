@@ -51,7 +51,7 @@ async function fetchData() {
 
 function removeOldContent() {
     document.querySelector(".card-body").innerHTML = "";
-    document.getElementById("btn-radios-view").remove();
+    if (document.getElementById("btn-radios-view")) document.getElementById("btn-radios-view").remove();
 }
 
 function injectContent(subjects) {
@@ -142,6 +142,41 @@ const calculateGradeDistribution = (subjects) => {
     return distribution.filter(grade => grade.count > 0);
 }
 
+const calculateMonthlyAverages = (grades) => {
+    const monthlyAverages = [];
+    const monthNames = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+    const firstMonth = new Date(grades.sort((a, b) => a.date - b.date)[0].date).getMonth();
+    const gradesByMonth = [];
+    for (let i = 0; i < 12; i++) {
+        gradesByMonth.push([]);
+    }
+    grades.forEach(grade => {
+        const month = new Date(grade.date).getMonth();
+        gradesByMonth[month].push(grade);
+    });
+    gradesByMonth.forEach((month, index) => {
+        const sum = month.reduce((a, b) => a + b.value, 0);
+        if (sum > 0) monthlyAverages.push({ month: monthNames[index % 12], average: +(Math.round(sum / month.length + "e+2")  + "e-2") });
+        else monthlyAverages.push({ month: monthNames[index % 12], average: 0 });
+    });
+    for (let i = 0; i < firstMonth; i++) {
+        monthlyAverages.push(monthlyAverages.shift());
+    }
+    return monthlyAverages;
+}
+
+const getGrades = (subjects) => {
+    const grades = [];
+    subjects.forEach(subject => {
+        subject.grades.forEach(category => {
+            category.grades.forEach(grade => {
+                grades.push(grade);
+            });
+        });
+    });
+    return grades;
+}
+
 const createContent = () => {
     const content = document.createElement("div");
     content.style = "display: flex; flex-direction: column; width: 100% !important; margin-bottom: 1rem; gap: 2rem;";
@@ -153,6 +188,7 @@ const createAnalysisContent = (subjects) => {
     content.style = "display: flex; width: 100%; flex-direction: column; gap: 0.5rem;";
     content.appendChild(createHeading("Analyse"));
     content.appendChild(createGradeDistributionChartCanvas(subjects));
+    content.appendChild(createMonthlyAveragesChartCanvas(getGrades(subjects)));
     return content;
 }
 
@@ -356,6 +392,38 @@ const createGradeDistributionChartCanvas = (grades) => {
             },
             responsive: true,
             maintainAspectRatio: false,
+        }
+    });
+    return container;
+}
+
+const createMonthlyAveragesChartCanvas = (grades) => {
+    const container = document.createElement("div");
+    const size = document.querySelector(".card-body").offsetWidth / 2 * 0.9;
+    container.style = `max-width: ${size}px; max-height: ${size}px;`;
+    const canvas = document.createElement("canvas");
+    container.appendChild(canvas);
+    canvas.setAttribute("id", "monthlyAverageGraph");
+    const ctx = canvas.getContext("2d");
+    const monthlyAverages = calculateMonthlyAverages(grades).filter(month => month.average !== 0);
+    const chart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: monthlyAverages.map(month => month.month),
+            datasets: [{
+                label: "Durchschnitt",
+                data: monthlyAverages.map(month => month.average),
+                backgroundColor: "#3490dc",
+                borderColor: "#3490dc",
+                fill: false
+            }]
+        },
+        options: {
+            legend: {
+                display: false
+            },
+            responsive: true,
+            maintainAspectRatio: false
         }
     });
     return container;
