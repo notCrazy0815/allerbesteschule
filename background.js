@@ -13,15 +13,17 @@ async function toggleStatus(tabId, changeInfo) {
 
         if (changeInfo.url) {
             url = changeInfo.url;
-            // const injected = await checkIfTabIsInjected(tabId);
-            // if (injected) {
-            //     await toggleTabInjection(tabId);
-            // }
-        } else if (!changeInfo.url) {
+            console.log("ChangeInfo URL is defined " + url);
+
+            if (url.includes(baseUrl) && url.includes("grades")) {
+                await toggleTabInjection(tabId);
+            }
+        } else {
             const injected = await checkIfTabIsInjected(tabId);
             if (injected) {
                 await toggleTabInjection(tabId);
             }
+            console.log("ChangeInfo URL is undefined");
         }
 
         if (changeInfo.status === "complete") {
