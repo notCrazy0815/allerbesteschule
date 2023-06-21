@@ -1,39 +1,57 @@
-readData();
-checkIfContentIsLoaded();
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (request.message === "fetchData") {
+        (async () => {
+            const subjects = await fetchData();
+            sendResponse({ message: "success", subjects: subjects });
+        })();
+    } else if (request.message === "removeOldContent") {
+        checkIfContentIsLoaded(removeOldContent);
+        sendResponse({ message: "success" });
+    } else if (request.message === "injectContent") {
+        checkIfContentIsLoaded(() => injectContent(request.subjects));
+        sendResponse({ message: "success" });
+    } else {
+        sendResponse({ message: "error" });
+    }
+    return true;
+});
 
-let subjects = [];
-let newestGrades = [];
-
-async function checkIfContentIsLoaded() {
-    if (document.querySelector(".card-body") && subjects.length > 0) loadData();
-    else setTimeout(checkIfContentIsLoaded, 100);
+async function checkIfContentIsLoaded(thenFunc) {
+    if (document.querySelector(".card-body")) {
+        thenFunc();
+    }
+    else setTimeout(checkIfContentIsLoaded.bind(null, thenFunc), 100);
 }
 
-async function readData() {
-    const res = await fetch(`https://beste.schule/web/students/${location.href.split("/")[4]}?include=grades,subjects`);
-    const data = await res.json();
-    subjects = data.data.subjects.map(subject => {
-        return { name: subject.name, grades: [], average: 0 };
-    });
-    const grades = data.data.grades.filter(grade => formatGrade(grade.value)).map(grade => {
-        return { value: formatGrade(grade.value), valueText: grade.value, date: Date.parse(grade.given_at), name: grade.collection.name, category: grade.collection.type, subject: grade.collection.subject.name };
-    });
-    grades.forEach(grade => {
-        const subject = subjects.find(subject => subject.name === grade.subject);
-        if (subject) {
-            const category = subject.grades.find(category => category.name === grade.category);
-            if (category) category.grades.push(grade);
-            else subject.grades.push({ name: grade.category, grades: [grade] });
-        }
-    });
-    newestGrades = grades.sort((a, b) => b.date - a.date).slice(0, 5);
+async function fetchData() {
+    try {
+        const res = await fetch(`https://beste.schule/web/students/${location.href.split("/")[4]}?include=grades,subjects`);
+        const data = await res.json();
+        subjects = data.data.subjects.map(subject => {
+            return { name: subject.name, grades: [], average: 0 };
+        });
+        const grades = data.data.grades.filter(grade => formatGrade(grade.value)).map(grade => {
+            return { value: formatGrade(grade.value), valueText: grade.value, date: Date.parse(grade.given_at), name: grade.collection.name, category: grade.collection.type, subject: grade.collection.subject.name };
+        });
+        grades.forEach(grade => {
+            const subject = subjects.find(subject => subject.name === grade.subject);
+            if (subject) {
+                const category = subject.grades.find(category => category.name === grade.category);
+                if (category) category.grades.push(grade);
+                else subject.grades.push({ name: grade.category, grades: [grade] });
+            }
+        });
+        newestGrades = grades.sort((a, b) => b.date - a.date).slice(0, 5);
+        subjects = calculateAverages(subjects);
+        return subjects;
+    } catch(err) {
+        return [];
+    }
 }
 
-function loadData() {
+function removeOldContent() {
     document.querySelector(".card-body").innerHTML = "";
     document.getElementById("btn-radios-view").remove();
-    subjects = calculateAverages(subjects);
-    injectContent(subjects);
 }
 
 function injectContent(subjects) {

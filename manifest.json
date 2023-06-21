@@ -6,14 +6,9 @@
   "action": {
     "default_icon": "images/icon16.png"
   },
-  "content_scripts": [
-    {
-      "matches": ["https://beste.schule/students/*/grades*"],
-      "js": ["content/content.js", "content/chart.js"]
-    }
-  ],
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": ["activeTab", "scripting"]
+  "permissions": ["activeTab", "scripting", "tabs", "storage"],
+  "host_permissions": ["https://beste.schule/*"]
 }
