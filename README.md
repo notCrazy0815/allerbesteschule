@@ -18,3 +18,6 @@ Right now, Allerbeste Schule is not available in the Chrome Web Store. However, 
 5. Click on "Load unpacked" and select the folder you just unzipped.
 6. Go to [beste.schule](https://beste.schule/), login and navigate to the grades page.
 7. Enjoy Allerbeste Schule!
+
+## Tools
+- [Chart.js](https://www.chartjs.org/) for the analysis charts
