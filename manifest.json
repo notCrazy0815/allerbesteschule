@@ -4,7 +4,8 @@
   "version": "0.1",
   "description": "This extension provides better analysis tools for students that use beste.schule to help them with evaluating their grades.",
   "action": {
-    "default_icon": "images/icon16.png"
+    "default_icon": "images/icon16.png",
+    "default_popup": "popup/popup.html"
   },
   "background": {
     "service_worker": "background.js"
