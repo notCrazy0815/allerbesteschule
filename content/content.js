@@ -189,6 +189,7 @@ const createAnalysisContent = (subjects) => {
     content.appendChild(createHeading("Analyse"));
     content.appendChild(createGradeDistributionChartCanvas(subjects));
     content.appendChild(createMonthlyAveragesChartCanvas(getGrades(subjects)));
+    // content.appendChild(createSubjectComparisonChartCanvas(subjects));
     return content;
 }
 
@@ -428,3 +429,36 @@ const createMonthlyAveragesChartCanvas = (grades) => {
     });
     return container;
 }
+
+// const createSubjectComparisonChartCanvas = (subjects) => {
+//     const container = document.createElement("div");
+//     const size = (document.querySelector(".card-body").offsetWidth / 2 * 0.9) * 2;
+//     container.style = `max-width: ${size}px; max-height: ${size}px;`;
+//     const canvas = document.createElement("canvas");
+//     container.appendChild(canvas);
+//     canvas.setAttribute("id", "subjectComparisonChart");
+//     const ctx = canvas.getContext("2d");
+//     const s = subjects.filter(subject => subject.average !== 0 && subject.average);
+//     console.log(s);
+//     const chart = new Chart(ctx, {
+//         type: "radar",
+//         data: {
+//             labels: s.map(subject => subject.name),
+//             datasets: [{
+//                 label: "Durchschnitt",
+//                 data: s.map(subject => subject.average),
+//                 backgroundColor: "#3490dc",
+//                 borderColor: "#3490dc",
+//                 fill: false
+//             }]
+//         },
+//         options: {
+//             legend: {
+//                 display: false
+//             },
+//             responsive: true,
+//             maintainAspectRatio: false
+//         }
+//     });
+//     return container;
+// }
