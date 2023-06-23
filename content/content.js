@@ -186,10 +186,28 @@ const createContent = () => {
 const createAnalysisContent = (subjects) => {
     const content = document.createElement("div");
     content.style = "display: flex; width: 100%; flex-direction: column; gap: 0.5rem;";
-    content.appendChild(createHeading("Analyse"));
-    content.appendChild(createGradeDistributionChartCanvas(subjects));
-    content.appendChild(createMonthlyAveragesChartCanvas(getGrades(subjects)));
-    // content.appendChild(createSubjectComparisonChartCanvas(subjects));
+
+    const contentHeader = document.createElement("div");
+    contentHeader.style = "display: flex; justify-content: space-between; align-items: center;";
+    contentHeader.appendChild(createHeading("Analyse"));
+
+    const chartsContent = createChartsContent();
+    const viewBtn = createViewAnalysisButton("Anzeigen");
+    viewBtn.addEventListener("click", () => {
+        if (viewBtn.innerText === "Anzeigen") {
+            chartsContent.style.display = "grid";
+            viewBtn.innerText = "Schließen";
+        } else {
+            chartsContent.style.display = "none";
+            viewBtn.innerText = "Anzeigen";
+        }
+    });
+    contentHeader.appendChild(viewBtn);
+
+    chartsContent.appendChild(createChartContainer(createGradeDistributionChartCanvas(subjects), "Notenverteilung"));
+    chartsContent.appendChild(createChartContainer(createMonthlyAveragesChartCanvas(getGrades(subjects)), "Durchschnitt pro Monat"));
+    content.appendChild(contentHeader);
+    content.appendChild(chartsContent);
     return content;
 }
 
@@ -221,12 +239,10 @@ const createAverageElement = (average) => {
     return elem;
 }
 
-const createViewAnalysisButton = (subject) => {
+const createViewAnalysisButton = (text) => {
     const btn = document.createElement("button");
-    btn.innerHTML = "Anzeigen";
+    btn.innerHTML = text;
     btn.style = "width: min-content; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; background-color: #ddd; color: black; cursor: pointer; white-space: nowrap; transition: background-color 0.1s ease-in-out;"
-    btn.setAttribute("id", subject.name);
-    btn.addEventListener("click", () => showAnalysis(subject));
     btn.addEventListener("mouseover", () => btn.style.backgroundColor = "#ccc");
     btn.addEventListener("mouseout", () => btn.style.backgroundColor = "#ddd");
     return btn;
@@ -368,19 +384,38 @@ const createNewestGradesElement = (grades) => {
     return elem;
 }
 
-const createGradeDistributionChartCanvas = (grades) => {
+const createChartsContent = () => {
+    const content = document.createElement("div");
+    content.style = "width: 100%; display: none; grid-template-columns: 1fr 1fr;";
+    return content;
+}
+
+const createChartContainer = (chart, title) => {
     const container = document.createElement("div");
-    const size = document.querySelector(".card-body").offsetWidth / 2 * 0.9;
-    container.style = `max-width: ${size}px; max-height: ${size}px;`;
+    container.style = "display: flex; flex-direction: column; justify-content: center; align-items: center";
+
+    const chartContainer = document.createElement("div");
+    const size = document.querySelector(".card-body").offsetWidth / 2 * 0.8;
+    chartContainer.style = `max-width ${size}px; max-height: ${size}px; width: ${size}px; height: ${size}px`;
+
+    const chartTitle = document.createElement("p");
+    chartTitle.innerText = title;
+    chartTitle.style = "font-weight: bold;";
+
+    chartContainer.appendChild(chart);
+    container.appendChild(chartTitle);
+    container.appendChild(chartContainer);
+    return container;
+}
+
+const createGradeDistributionChartCanvas = (grades) => {
     const canvas = document.createElement("canvas");
-    container.appendChild(canvas);
-    canvas.setAttribute("id", "gradeDistributionChart");
     const ctx = canvas.getContext("2d");
     const gradeDistribution = calculateGradeDistribution(grades);
     const chart = new Chart(ctx, {
         type: "bar",
         data: {
-            labels: [].concat(...gradeDistribution.map(grade => grade.value)),
+            labels: gradeDistribution.map(grade => grade.value),
             datasets: [{
                 label: "Anzahl",
                 data: gradeDistribution.map(grade => grade.count),
@@ -395,16 +430,11 @@ const createGradeDistributionChartCanvas = (grades) => {
             maintainAspectRatio: false,
         }
     });
-    return container;
+    return canvas;
 }
 
 const createMonthlyAveragesChartCanvas = (grades) => {
-    const container = document.createElement("div");
-    const size = document.querySelector(".card-body").offsetWidth / 2 * 0.9;
-    container.style = `max-width: ${size}px; max-height: ${size}px;`;
     const canvas = document.createElement("canvas");
-    container.appendChild(canvas);
-    canvas.setAttribute("id", "monthlyAverageGraph");
     const ctx = canvas.getContext("2d");
     const monthlyAverages = calculateMonthlyAverages(grades).filter(month => month.average !== 0);
     const chart = new Chart(ctx, {
@@ -427,38 +457,5 @@ const createMonthlyAveragesChartCanvas = (grades) => {
             maintainAspectRatio: false
         }
     });
-    return container;
+    return canvas;
 }
-
-// const createSubjectComparisonChartCanvas = (subjects) => {
-//     const container = document.createElement("div");
-//     const size = (document.querySelector(".card-body").offsetWidth / 2 * 0.9) * 2;
-//     container.style = `max-width: ${size}px; max-height: ${size}px;`;
-//     const canvas = document.createElement("canvas");
-//     container.appendChild(canvas);
-//     canvas.setAttribute("id", "subjectComparisonChart");
-//     const ctx = canvas.getContext("2d");
-//     const s = subjects.filter(subject => subject.average !== 0 && subject.average);
-//     console.log(s);
-//     const chart = new Chart(ctx, {
-//         type: "radar",
-//         data: {
-//             labels: s.map(subject => subject.name),
-//             datasets: [{
-//                 label: "Durchschnitt",
-//                 data: s.map(subject => subject.average),
-//                 backgroundColor: "#3490dc",
-//                 borderColor: "#3490dc",
-//                 fill: false
-//             }]
-//         },
-//         options: {
-//             legend: {
-//                 display: false
-//             },
-//             responsive: true,
-//             maintainAspectRatio: false
-//         }
-//     });
-//     return container;
-// }
