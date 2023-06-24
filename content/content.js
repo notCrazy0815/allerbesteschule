@@ -76,7 +76,7 @@ const calculateTotalAverage = (subjects) => {
     let count = 0;
     for (subject of subjects) {
         if (subject.average > 0) {
-            sum += subject.average;
+            sum += subject.finalGrade;
             count++;
         }
     }
@@ -111,6 +111,7 @@ const calculateAverages = (subjects) => {
         }
 
         subject.average = +(Math.round(weightedSum / totalWeight + "e+2")  + "e-2");
+        subject.finalGrade = Math.round(subject.average);
     });
 
     return subjects;
@@ -313,7 +314,7 @@ const createInTotalRow = (subject) => {
     tr.style = "border-bottom: 1px solid #ddd; font-weight: bold";
     tr.appendChild(createTableCell("Insgesamt"));
     tr.appendChild(createTableCell(subject.average));
-    tr.appendChild(createTableCell(""));
+    tr.appendChild(createTableCell("Wahrscheinliche Endnote: " + subject.finalGrade));
     return tr;
 }
 
