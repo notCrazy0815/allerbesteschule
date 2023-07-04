@@ -67,10 +67,6 @@ function injectContent(subjects) {
     wrapper.appendChild(content);
 }
 
-function showAnalysis(subject) {
-    console.log(subject);
-}
-
 const calculateTotalAverage = (subjects) => {
     let sum = 0;
     let count = 0;
@@ -111,6 +107,8 @@ const calculateAverages = (subjects) => {
         }
 
         subject.average = +(Math.round(weightedSum / totalWeight + "e+2")  + "e-2");
+
+        // TODO: check if a final grade is already set in storage
         subject.finalGrade = Math.round(subject.average);
     });
 
@@ -176,6 +174,20 @@ const getGrades = (subjects) => {
         });
     });
     return grades;
+}
+
+const saveProbableFinalGrade = (value, subject) => {
+    const send = async (val, sub) => {
+        const response = await chrome.runtime.sendMessage({ message: "saveFinalGrade", value: parseInt(val), subject: sub });
+    
+        if (response.message === "success") {
+            const content = document.querySelector(".card-body");
+            content.innerHTML = "";
+            injectContent(response.subjects);
+        }
+    };
+
+    send(value, subject);
 }
 
 const createContent = () => {
@@ -263,6 +275,7 @@ const createGradeTable = (subject) => {
         t.appendChild(createTableRow(category));
     });
     t.appendChild(createInTotalRow(subject));
+    t.appendChild(createProbableFinalGradeRow(subject));
     return t;
 }
 
@@ -311,11 +324,108 @@ const createTableCell = (text) => {
 
 const createInTotalRow = (subject) => {
     const tr = document.createElement("tr");
-    tr.style = "border-bottom: 1px solid #ddd; font-weight: bold";
+    tr.style = "font-weight: bold";
     tr.appendChild(createTableCell("Insgesamt"));
     tr.appendChild(createTableCell(subject.average));
-    tr.appendChild(createTableCell("Wahrscheinliche Endnote: " + subject.finalGrade));
+    tr.appendChild(createTableCell(""));
     return tr;
+}
+
+const createProbableFinalGradeRow = (subject) => {
+    const tr = document.createElement("tr");
+    tr.style = "border-bottom: 1px solid #ddd; font-weight: bold; background-color: rgb(245, 245, 245)";
+    tr.appendChild(createTableCell("Voraussichtliche Endnote"));
+    const middleCell = createTableCell("");
+    const input = createEditProbableFinalGradeInput(subject.finalGrade, subject.average);
+    middleCell.appendChild(input);
+    middleCell.style = "padding: 0";
+    tr.appendChild(middleCell);
+    const lastCell = createTableCell("");
+    lastCell.appendChild(createEditProbableFinalGradeButton(subject.average, input, subject.name));
+    tr.appendChild(lastCell);
+    return tr;
+}
+
+const createEditProbableFinalGradeInput = (finalGrade, average) => {
+    const inp = document.createElement("input");
+    inp.type = "number";
+    inp.value = finalGrade;
+    inp.readOnly = true;
+    const possibleFinalGrades = calulcatePossibleFinalGrades(average);
+    inp.min = possibleFinalGrades[0];
+    inp.max = possibleFinalGrades[possibleFinalGrades.length - 1];
+    inp.style = "width: 100%; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; background-color: transparent; color: black; cursor: pointer; white-space: nowrap; transition: background-color 0.1s ease-in-out; font-weight: bold;";
+    return inp;
+}
+
+const calulcatePossibleFinalGrades = (average) => {
+    const gradeRanges = [[1.0, 1.6], [1.4, 2.6], [2.4, 3.6], [3.4, 4.6], [4.4, 5.6], [5.4, 6.0]];
+    const possibleGrades = [];
+    for (let i = 0; i < gradeRanges.length; i++) {
+        const [min, max] = gradeRanges[i];
+        if (average >= min && average <= max) {
+          possibleGrades.push(i + 1);
+        }
+    }
+    return possibleGrades;
+}
+
+const createEditProbableFinalGradeButton = (average, input, subject) => {
+    const btn = document.createElement("button");
+    btn.innerText = "Bearbeiten";
+    btn.style = "width: min-content; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; background-color: #ddd; color: black; cursor: pointer; white-space: nowrap; transition: background-color 0.1s ease-in-out;"
+    btn.addEventListener("mouseover", () => btn.style.backgroundColor = "#ccc");
+    btn.addEventListener("mouseout", () => btn.style.backgroundColor = "#ddd");
+
+    let presetGrade = input.value;
+    const possibleFinalGrades = calulcatePossibleFinalGrades(average);
+
+    input.max = possibleFinalGrades[possibleFinalGrades.length - 1];
+    input.min = possibleFinalGrades[0];
+
+    const checkInput = () => {
+        return possibleFinalGrades.includes(parseInt(input.value));
+    }
+
+    const enableInput = () => {
+        input.readOnly = false;
+        input.style.backgroundColor = "#ddd";
+        input.style.cursor = "text";
+        btn.innerText = "Speichern";
+    };
+
+    const disableInput = () => {
+        if (checkInput()) {
+            input.readOnly = true;
+            input.style.backgroundColor = "transparent";
+            input.style.cursor = "pointer";
+            btn.innerText = "Bearbeiten";
+
+            if (input.value !== presetGrade) {
+                saveProbableFinalGrade(input.value, subject);
+                presetGrade = input.value;
+            }
+        } else {
+            input.value = presetGrade;
+            disableInput();
+        }
+    };
+
+    btn.addEventListener("click", () => {
+        if (btn.innerText === "Bearbeiten") {
+            enableInput();
+        } else {
+            disableInput();
+        }
+    });
+
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            disableInput();
+        }
+    });
+    
+    return btn;
 }
 
 const createGradeElem = (grade) => {
