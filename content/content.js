@@ -107,8 +107,6 @@ const calculateAverages = (subjects) => {
         }
 
         subject.average = +(Math.round(weightedSum / totalWeight + "e+2")  + "e-2");
-
-        // TODO: check if a final grade is already set in storage
         subject.finalGrade = Math.round(subject.average);
     });
 
@@ -341,7 +339,11 @@ const createProbableFinalGradeRow = (subject) => {
     middleCell.style = "padding: 0";
     tr.appendChild(middleCell);
     const lastCell = createTableCell("");
-    lastCell.appendChild(createEditProbableFinalGradeButton(subject.average, input, subject.name));
+    if (calculcatePossibleFinalGrades(subject.average).length > 1) {
+        lastCell.appendChild(createEditProbableFinalGradeButton(subject.average, input, subject.name));
+    } else {
+        lastCell.appendChild(createTableCell(""));
+    }
     tr.appendChild(lastCell);
     return tr;
 }
@@ -351,14 +353,14 @@ const createEditProbableFinalGradeInput = (finalGrade, average) => {
     inp.type = "number";
     inp.value = finalGrade;
     inp.readOnly = true;
-    const possibleFinalGrades = calulcatePossibleFinalGrades(average);
+    const possibleFinalGrades = calculcatePossibleFinalGrades(average);
     inp.min = possibleFinalGrades[0];
     inp.max = possibleFinalGrades[possibleFinalGrades.length - 1];
     inp.style = "width: 100%; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; background-color: transparent; color: black; cursor: pointer; white-space: nowrap; transition: background-color 0.1s ease-in-out; font-weight: bold;";
     return inp;
 }
 
-const calulcatePossibleFinalGrades = (average) => {
+const calculcatePossibleFinalGrades = (average) => {
     const gradeRanges = [[1.0, 1.6], [1.4, 2.6], [2.4, 3.6], [3.4, 4.6], [4.4, 5.6], [5.4, 6.0]];
     const possibleGrades = [];
     for (let i = 0; i < gradeRanges.length; i++) {
@@ -378,7 +380,7 @@ const createEditProbableFinalGradeButton = (average, input, subject) => {
     btn.addEventListener("mouseout", () => btn.style.backgroundColor = "#ddd");
 
     let presetGrade = input.value;
-    const possibleFinalGrades = calulcatePossibleFinalGrades(average);
+    const possibleFinalGrades = calculcatePossibleFinalGrades(average);
 
     input.max = possibleFinalGrades[possibleFinalGrades.length - 1];
     input.min = possibleFinalGrades[0];
