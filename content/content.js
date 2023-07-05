@@ -567,7 +567,12 @@ const createMonthlyAveragesChartCanvas = (grades) => {
                 display: false
             },
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    reverse: true
+                }
+            }
         }
     });
     return canvas;
